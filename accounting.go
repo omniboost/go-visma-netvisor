@@ -1,35 +1,36 @@
 package netvisor
 
 import (
+	"encoding/xml"
 	"net/http"
 	"net/url"
 )
 
-func (c *Client) NewAccountingledgerRequest() AccountingledgerRequest {
-	return AccountingledgerRequest{
+func (c *Client) NewAccountingRequest() AccountingRequest {
+	return AccountingRequest{
 		client:      c,
-		queryParams: c.NewAccountingledgerQueryParams(),
-		pathParams:  c.NewAccountingledgerPathParams(),
-		method:      http.MethodGet,
+		queryParams: c.NewAccountingQueryParams(),
+		pathParams:  c.NewAccountingPathParams(),
+		method:      http.MethodPost,
 		headers:     http.Header{},
-		requestBody: c.NewAccountingledgerRequestBody(),
+		requestBody: c.NewAccountingRequestBody(),
 	}
 }
 
-type AccountingledgerRequest struct {
+type AccountingRequest struct {
 	client      *Client
-	queryParams *AccountingledgerQueryParams
-	pathParams  *AccountingledgerPathParams
+	queryParams *AccountingQueryParams
+	pathParams  *AccountingPathParams
 	method      string
 	headers     http.Header
-	requestBody AccountingledgerRequestBody
+	requestBody AccountingRequestBody
 }
 
-func (c *Client) NewAccountingledgerQueryParams() *AccountingledgerQueryParams {
-	return &AccountingledgerQueryParams{}
+func (c *Client) NewAccountingQueryParams() *AccountingQueryParams {
+	return &AccountingQueryParams{}
 }
 
-type AccountingledgerQueryParams struct {
+type AccountingQueryParams struct {
 	// Finds vouchers that are added after given date (inclusive)
 	StartDate DateTime `schema:"startdate"`
 	// Finds vouchers that are added before given date(inclusive)
@@ -52,7 +53,7 @@ type AccountingledgerQueryParams struct {
 	VoucherStatus int `schema:"voucherstatus,omitempty"`
 }
 
-func (p AccountingledgerQueryParams) ToURLValues() (url.Values, error) {
+func (p AccountingQueryParams) ToURLValues() (url.Values, error) {
 	encoder := NewSchemaEncoder()
 	params := url.Values{}
 
@@ -64,61 +65,64 @@ func (p AccountingledgerQueryParams) ToURLValues() (url.Values, error) {
 	return params, nil
 }
 
-func (r *AccountingledgerRequest) QueryParams() *AccountingledgerQueryParams {
+func (r *AccountingRequest) QueryParams() *AccountingQueryParams {
 	return r.queryParams
 }
 
-func (c *Client) NewAccountingledgerPathParams() *AccountingledgerPathParams {
-	return &AccountingledgerPathParams{}
+func (c *Client) NewAccountingPathParams() *AccountingPathParams {
+	return &AccountingPathParams{}
 }
 
-type AccountingledgerPathParams struct {
+type AccountingPathParams struct {
 }
 
-func (p *AccountingledgerPathParams) Params() map[string]string {
+func (p *AccountingPathParams) Params() map[string]string {
 	return map[string]string{}
 }
 
-func (r *AccountingledgerRequest) PathParams() *AccountingledgerPathParams {
+func (r *AccountingRequest) PathParams() *AccountingPathParams {
 	return r.pathParams
 }
 
-func (r *AccountingledgerRequest) SetMethod(method string) {
+func (r *AccountingRequest) SetMethod(method string) {
 	r.method = method
 }
 
-func (r *AccountingledgerRequest) Method() string {
+func (r *AccountingRequest) Method() string {
 	return r.method
 }
 
-func (s *Client) NewAccountingledgerRequestBody() AccountingledgerRequestBody {
-	return AccountingledgerRequestBody{}
+func (s *Client) NewAccountingRequestBody() AccountingRequestBody {
+	return AccountingRequestBody{}
 }
 
-type AccountingledgerRequestBody struct{}
+type AccountingRequestBody struct {
+	XMLName xml.Name   `xml:"Root"`
+	Voucher NewVoucher `xml:"Voucher"`
+}
 
-func (r *AccountingledgerRequest) RequestBody() *AccountingledgerRequestBody {
+func (r *AccountingRequest) RequestBody() *AccountingRequestBody {
 	return &r.requestBody
 }
 
-func (r *AccountingledgerRequest) SetRequestBody(body AccountingledgerRequestBody) {
+func (r *AccountingRequest) SetRequestBody(body AccountingRequestBody) {
 	r.requestBody = body
 }
 
-func (r *AccountingledgerRequest) NewResponseBody() *AccountingledgerResponseBody {
-	return &AccountingledgerResponseBody{}
+func (r *AccountingRequest) NewResponseBody() *AccountingResponseBody {
+	return &AccountingResponseBody{}
 }
 
-type AccountingledgerResponseBody struct {
+type AccountingResponseBody struct {
 	ResponseStatus ResponseStatus
 	Vouchers       Vouchers `xml:"Vouchers>Voucher"`
 }
 
-func (r *AccountingledgerRequest) URL() url.URL {
-	return r.client.GetEndpointURL("accountingledger.nv", r.PathParams())
+func (r *AccountingRequest) URL() url.URL {
+	return r.client.GetEndpointURL("accounting.nv", r.PathParams())
 }
 
-func (r *AccountingledgerRequest) Do() (AccountingledgerResponseBody, error) {
+func (r *AccountingRequest) Do() (AccountingResponseBody, error) {
 	// Process query parameters
 	u := r.URL()
 	values, err := r.QueryParams().ToURLValues()
@@ -128,7 +132,7 @@ func (r *AccountingledgerRequest) Do() (AccountingledgerResponseBody, error) {
 	u = AddQueryParamsToURL(u, values)
 
 	// Create http request
-	req, err := r.client.NewRequest(nil, r.Method(), u, nil)
+	req, err := r.client.NewRequest(nil, r.Method(), u, r.RequestBody())
 	if err != nil {
 		return *r.NewResponseBody(), err
 	}

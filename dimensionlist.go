@@ -96,14 +96,16 @@ func (r *DimensionlistRequest) URL() url.URL {
 }
 
 func (r *DimensionlistRequest) Do() (DimensionlistResponseBody, error) {
-	// Create http request
-	req, err := r.client.NewRequest(nil, r.Method(), r.URL(), nil)
+	// Process query parameters
+	u := r.URL()
+	values, err := r.QueryParams().ToURLValues()
 	if err != nil {
 		return *r.NewResponseBody(), err
 	}
+	u = AddQueryParamsToURL(u, values)
 
-	// Process query parameters
-	err = AddQueryParamsToRequest(r.QueryParams(), req, false)
+	// Create http request
+	req, err := r.client.NewRequest(nil, r.Method(), u, nil)
 	if err != nil {
 		return *r.NewResponseBody(), err
 	}
