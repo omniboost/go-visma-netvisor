@@ -1,6 +1,7 @@
-package utils
+package netvisor
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -38,20 +39,14 @@ func AddQueryParamsToRequest(requestParams interface{}, req *http.Request, skipE
 		}
 	}
 
-	query := req.URL.Query()
-	for k, vals := range params {
-		for _, v := range vals {
-			if skipEmpty && v == "" {
-				continue
-			}
+	query := AddQueryParams(req.URL.Query(), params)
+	// if skipEmpty && v == "" {
+	// 	continue
+	// }
 
-			if skipEmpty && v == "0" {
-				continue
-			}
-
-			query.Add(k, v)
-		}
-	}
+	// if skipEmpty && v == "0" {
+	// 	continue
+	// }
 
 	req.URL.RawQuery = query.Encode()
 
@@ -60,23 +55,43 @@ func AddQueryParamsToRequest(requestParams interface{}, req *http.Request, skipE
 	return nil
 }
 
+func AddQueryParamsToURL(url url.URL, params url.Values) url.URL {
+	query := url.Query()
+	for k, vals := range params {
+		for _, v := range vals {
+			query.Add(k, v)
+		}
+	}
+	url.RawQuery = query.Encode()
+	return url
+}
+
+func AddQueryParams(params1, params2 url.Values) url.Values {
+	for k, vals := range params2 {
+		for _, v := range vals {
+			params1.Add(k, v)
+		}
+	}
+	return params1
+}
+
 func NewSchemaEncoder() *schema.Encoder {
 	encoder := schema.NewEncoder()
 
-	// // register custom encoders
-	// encodeSchemaMarshaler := func(v reflect.Value) string {
-	// 	marshaler, ok := v.Interface().(SchemaMarshaler)
-	// 	if ok == true {
-	// 		return marshaler.MarshalSchema()
-	// 	}
+	// register custom encoders
+	encodeSchemaMarshaler := func(v reflect.Value) string {
+		marshaler, ok := v.Interface().(SchemaMarshaler)
+		if ok == true {
+			return marshaler.MarshalSchema()
+		}
 
-	// 	stringer, ok := v.Interface().(fmt.Stringer)
-	// 	if ok == true {
-	// 		return stringer.String()
-	// 	}
+		stringer, ok := v.Interface().(fmt.Stringer)
+		if ok == true {
+			return stringer.String()
+		}
 
-	// 	return ""
-	// }
+		return ""
+	}
 
 	// encoder.RegisterEncoder(&odata.Expand{}, encodeSchemaMarshaler)
 	// encoder.RegisterEncoder(&odata.Filter{}, encodeSchemaMarshaler)
@@ -84,6 +99,7 @@ func NewSchemaEncoder() *schema.Encoder {
 	// encoder.RegisterEncoder(&odata.Top{}, encodeSchemaMarshaler)
 	// encoder.RegisterEncoder(&odata.OrderBy{}, encodeSchemaMarshaler)
 	// encoder.RegisterEncoder(&odata.Skip{}, encodeSchemaMarshaler)
+	encoder.RegisterEncoder(DateTime{}, encodeSchemaMarshaler)
 
 	encodeNullFloat := func(v reflect.Value) string {
 		nullFloat, _ := v.Interface().(null.Float)

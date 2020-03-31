@@ -3,8 +3,6 @@ package netvisor
 import (
 	"net/http"
 	"net/url"
-
-	"github.com/omniboost/go-visma-netvisor/utils"
 )
 
 func (c *Client) NewDimensionlistRequest() DimensionlistRequest {
@@ -34,7 +32,7 @@ func (c *Client) NewDimensionlistQueryParams() *DimensionlistQueryParams {
 type DimensionlistQueryParams struct{}
 
 func (p DimensionlistQueryParams) ToURLValues() (url.Values, error) {
-	encoder := utils.NewSchemaEncoder()
+	encoder := NewSchemaEncoder()
 	params := url.Values{}
 
 	err := encoder.Encode(p, params)
@@ -105,7 +103,7 @@ func (r *DimensionlistRequest) Do() (DimensionlistResponseBody, error) {
 	}
 
 	// Process query parameters
-	err = utils.AddQueryParamsToRequest(r.QueryParams(), req, false)
+	err = AddQueryParamsToRequest(r.QueryParams(), req, false)
 	if err != nil {
 		return *r.NewResponseBody(), err
 	}
